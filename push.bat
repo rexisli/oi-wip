@@ -108,7 +108,7 @@ echo [OK] 私钥已写入: %TMP_KEY%
 echo.
 
 :: ---- GIT_SSH_COMMAND：只写 ssh 参数，让 git 用自己的 ssh ----
-set "GIT_SSH_COMMAND=ssh -i "%TMP_KEY%" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+set "GIT_SSH_COMMAND=ssh -i "%TMP_KEY%" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -p 443 -o HostName=ssh.github.com"
 
 :: ---- git init ----
 if not exist ".git" (
