@@ -45,7 +45,7 @@ echo.
 
 :: ---- 用 PowerShell 写私钥（LF 换行）----
 set "TMP_KEY=%TEMP%\gh_key_%RANDOM%%RANDOM%.tmp"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$k = '-----BEGIN OPENSSH PRIVATE KEY-----`nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW`nQyNTUxOQAAACA7BzRRdJkmYA7SuANwi2TV4g/UO/AUaIKQNilWvOg0bQAAAKAYqWLYGKli`n2AAAAAtzc2gtZWQyNTUxOQAAACA7BzRRdJkmYA7SuANwi2TV4g/UO/AUaIKQNilWvOg0bQ`nAAAEBOh7NSOS402gx/GrQstw53s+zKXCNwzo92JvjZ8B94MzsHNFF0mSZgDtK4A3CLZNXi`nD9Q78BRogpA2KVa86DRtAAAAF3JleGlzbGlATEFQVE9QLUxDNkRQMkxOAQIDBAUG`n-----END OPENSSH PRIVATE KEY-----'; $k = $k -replace [char]13, ''; [IO.File]::WriteAllText('%TMP_KEY%', $k + [char]10)"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$lines = @('-----BEGIN OPENSSH PRIVATE KEY-----','b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW','QyNTUxOQAAACA7BzRRdJkmYA7SuANwi2TV4g/UO/AUaIKQNilWvOg0bQAAAKAYqWLYGKli','2AAAAAtzc2gtZWQyNTUxOQAAACA7BzRRdJkmYA7SuANwi2TV4g/UO/AUaIKQNilWvOg0bQ','AAAEBOh7NSOS402gx/GrQstw53s+zKXCNwzo92JvjZ8B94MzsHNFF0mSZgDtK4A3CLZNXi','D9Q78BRogpA2KVa86DRtAAAAF3JleGlzbGlATEFQVE9QLUxDNkRQMkxOAQIDBAUG','-----END OPENSSH PRIVATE KEY-----'); [IO.File]::WriteAllText('%TMP_KEY%', ($lines -join [char]10) + [char]10)"
 
 if not exist "%TMP_KEY%" (
     echo [X] 私钥写入失败
