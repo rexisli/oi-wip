@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 :: ============================================================
 set "REPO=rexisli/oi-wip"
 set "BASE_BRANCH=main"
-set "FEATURE_BRANCH=machine-room-update"
+set "FEATURE_BRANCH=main"
 set "USER_NAME=machine-room"
 set "USER_EMAIL=machine-room@users.noreply.github.com"
 set "GIT_EXE_MANUAL="
