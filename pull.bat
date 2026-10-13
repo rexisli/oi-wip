@@ -1,91 +1,86 @@
 @echo off
-chcp 65001 >nul
 setlocal
 
-:: ============ 配置区 ============
+:: Configuration
 set "REPO=rexisli/oi-wip"
 set "BRANCH=main"
-set "OUT_DIR=oi-wip"
-:: =================================
+set "OUT_DIR=."
 
 cd /d "%~dp0"
 
-echo ============================================================
-echo   pull.bat - 拉取 %REPO% (%BRANCH%)
-echo ============================================================
+echo.
+echo pull.bat - Pull %REPO% (%BRANCH%)
 echo.
 
 set "ZIP_URL=https://github.com/%REPO%/archive/refs/heads/%BRANCH%.zip"
 set "TMP_ZIP=%TEMP%\oi_wip_%RANDOM%%RANDOM%.zip"
 set "TMP_DIR=%TEMP%\oi_wip_extract_%RANDOM%%RANDOM%"
 
-echo [*] 下载 %ZIP_URL%
+echo [*] Downloading from GitHub...
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "try {" ^
-  "  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;" ^
-  "  $ProgressPreference = 'SilentlyContinue';" ^
-  "  Invoke-WebRequest -Uri '%ZIP_URL%' -OutFile '%TMP_ZIP%' -UseBasicParsing;" ^
-  "  exit 0" ^
-  "} catch {" ^
-  "  Write-Host ('[X] 下载失败: ' + $_.Exception.Message);" ^
-  "  exit 1" ^
-  "}"
+:: Download using PowerShell (single line to prevent parsing errors)
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%ZIP_URL%' -OutFile '%TMP_ZIP%'"
 
-if errorlevel 1 goto :end
 if not exist "%TMP_ZIP%" (
-    echo [X] 下载文件不存在
+    echo [X] Download failed or file not found.
+    pause
     goto :end
 )
 
 for %%A in ("%TMP_ZIP%") do set "SIZE=%%~zA"
-echo [OK] 下载完成，大小: %SIZE% 字节
+echo [OK] Download completed, size: %SIZE% bytes
 echo.
 
-:: ---- 解压 ----
-echo [*] 解压到临时目录 ...
-if not exist "%TMP_DIR%" mkdir "%TMP_DIR%"
+:: ---- Extraction ----
+echo [*] Extracting to temporary directory ...
+if exist "%TMP_DIR%" rmdir /s /q "%TMP_DIR%"
+mkdir "%TMP_DIR%"
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "try {" ^
-  "  Expand-Archive -Path '%TMP_ZIP%' -DestinationPath '%TMP_DIR%' -Force;" ^
-  "  exit 0" ^
-  "} catch {" ^
-  "  Write-Host ('[X] 解压失败: ' + $_.Exception.Message);" ^
-  "  exit 1" ^
-  "}"
-if errorlevel 1 goto :cleanup
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TMP_ZIP%' -DestinationPath '%TMP_DIR%' -Force"
 
-:: ---- GitHub zip 顶层目录是 oi-wip-main ----
-set "SRC_DIR=%TMP_DIR%\oi-wip-%BRANCH%"
-if not exist "%SRC_DIR%" (
-    echo [X] 找不到解压后的目录: %SRC_DIR%
-    dir "%TMP_DIR%"
+if not exist "%TMP_DIR%" (
+    echo [X] Extraction failed.
     goto :cleanup
 )
 
-:: ---- 拷贝到当前目录 ----
+:: ---- Auto detect extracted source directory ----
+set "SRC_DIR="
+for /d %%d in ("%TMP_DIR%\*") do set "SRC_DIR=%%d"
+
+if not defined SRC_DIR (
+    echo [X] No source directory found after extraction.
+    goto :cleanup
+)
+
+echo [INFO] Detected source directory: %SRC_DIR%
+echo.
+
+:: ---- Copy files with stable robocopy ----
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
-echo [*] 拷贝文件到 .\%OUT_DIR%\ ...
-xcopy /E /Y /Q "%SRC_DIR%\*" "%OUT_DIR%\" >nul
-if errorlevel 1 (
-    echo [X] 拷贝失败
+
+echo [*] Copying files to target directory ...
+:: Note: /Y is removed as robocopy overwrites by default. /Y is invalid for robocopy.
+robocopy "%SRC_DIR%" "%OUT_DIR%" /E /R:2 /W:1 /XF "pull.bat" /NDL /NJH /NJS
+
+if %errorlevel% geq 8 (
+    echo [X] Copy failed.
+    pause
     goto :cleanup
 )
 
 echo.
-echo ============================================================
-echo [OK] 拉取完成！文件已保存到 .\%OUT_DIR%\
-echo ============================================================
+echo [OK] Pull completed! All files saved successfully.
+echo.
 
 :cleanup
+echo [*] Cleaning up temporary files ...
 if exist "%TMP_ZIP%" del /f /q "%TMP_ZIP%"
 if exist "%TMP_DIR%" rmdir /s /q "%TMP_DIR%"
-echo [OK] 临时文件已清理
+echo [OK] Temporary files cleaned up.
 
 :end
 echo.
-echo 按任意键关闭窗口...
+echo Press any key to close the window...
 pause >nul
 endlocal
